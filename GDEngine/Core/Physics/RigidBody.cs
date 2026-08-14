@@ -83,7 +83,16 @@ namespace GDEngine.Core.Components
         private bool _suppressTransformSync = false;
 
         private bool _disposed = false;
-        private float maximumSpeculativeMargin = 0.005f;
+        // BepuPhysics uses this to predict contacts BEFORE actual overlap, which is what
+        // stops fast-moving bodies from tunneling into geometry in a single step. At 0.005
+        // units it can only "see" 5mm ahead - a box moving at a realistic push speed (~8
+        // units/sec) travels roughly 0.13 units per frame at 60fps, more than 25x that margin.
+        // Once an object regularly outruns the margin, it starts each step already
+        // interpenetrating rather than speculatively contacting, so the solver has to shove it
+        // back out by a large amount every single step - a correction big enough, often enough,
+        // to eventually blow up into NaN/Infinity (the BepuPhysics broad-phase crash this
+        // fixes). A few tenths of a unit comfortably covers this game's actual object speeds.
+        private float maximumSpeculativeMargin = 0.5f;
         #endregion
 
         #region Properties
@@ -498,10 +507,18 @@ namespace GDEngine.Core.Components
             {
                 var inertia = _collider.CalculateInertia(_mass);
 
+                // no Continuity mode was ever configured here, which leaves it on whatever
+                // BepuPhysics' default is (discrete/passive - no sweep test between steps).
+                // A fast-moving body making a sharp first contact (e.g. still falling AND being
+                // pushed at once) can tunnel deep enough in a single step that the solver can't
+                // cleanly resolve it. Continuous enables a swept check specifically for that case.
+                var collidable = new CollidableDescription(shapeIndex, maximumSpeculativeMargin);
+                collidable.Continuity = ContinuousDetection.Continuous(1e-3f, 1e-3f);
+
                 var bodyDescription = BodyDescription.CreateDynamic(
                     pose,
                     inertia,
-                    new CollidableDescription(shapeIndex, maximumSpeculativeMargin),
+                    collidable,
                     new BodyActivityDescription(0.01f)
                 );
 

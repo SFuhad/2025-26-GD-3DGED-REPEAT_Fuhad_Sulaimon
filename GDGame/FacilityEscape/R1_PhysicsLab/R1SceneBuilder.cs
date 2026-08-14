@@ -118,8 +118,16 @@ namespace GDGame.FacilityEscape
             var collider = go.AddComponent<BoxCollider>();
             collider.Size = new Vector3(4, 3, 1);
 
+            // Kinematic, not Static - a Static body's collider is only ever set from its
+            // Transform once, at creation. PressurePlate slides this door by moving its
+            // Transform after the fact, which would leave an invisible, immovable collider
+            // sitting in the doorway forever if this were Static - and shoving a crate hard
+            // into that phantom wall is exactly the kind of thing that can spike the physics
+            // solver into the NaN crash we hit earlier. Kinematic bodies sync their collider
+            // FROM the Transform every physics step, so moving the Transform actually moves
+            // the collision shape too.
             var rigidBody = go.AddComponent<RigidBody>();
-            rigidBody.BodyType = BodyType.Static;
+            rigidBody.BodyType = BodyType.Kinematic;
 
             scene.Add(go);
             return go;
@@ -128,9 +136,14 @@ namespace GDGame.FacilityEscape
         private static PressurePlate BuildPressurePlate(Scene scene, GraphicsDevice device,
             Material material, Texture2D texture, GameObject exitDoor, UIText statusText)
         {
+            // less extreme aspect ratio (was 4x0.5x4, an 8:1 flat slab) and overlapping the
+            // floor by half a unit instead of sitting flush against it - both flat/thin
+            // colliders and zero-gap seams are independently known to destabilize the
+            // broad-phase tree in this physics engine (same class of bug as the wall/floor
+            // tunneling seams fixed earlier in BuildBoxRoom).
             var go = new GameObject("R1_PressurePlate");
-            go.Transform.TranslateTo(new Vector3(0, 0.25f, -8f));
-            go.Transform.ScaleTo(new Vector3(4, 0.5f, 4));
+            go.Transform.TranslateTo(new Vector3(0, 0f, -8f));
+            go.Transform.ScaleTo(new Vector3(4, 1f, 4));
 
             var meshFilter = MeshFilterFactory.CreateCubeTexturedLit(device);
             go.AddComponent(meshFilter);
@@ -140,7 +153,7 @@ namespace GDGame.FacilityEscape
             meshRenderer.Overrides.MainTexture = texture;
 
             var collider = go.AddComponent<BoxCollider>();
-            collider.Size = new Vector3(4, 0.5f, 4);
+            collider.Size = new Vector3(4, 1f, 4);
             collider.IsTrigger = true;
 
             var rigidBody = go.AddComponent<RigidBody>();

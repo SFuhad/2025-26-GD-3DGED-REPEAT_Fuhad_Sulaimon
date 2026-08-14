@@ -23,7 +23,7 @@ This document contains a step-by-step development plan of MonoGame content cover
 
 ---
 
-## Week 4
+
 - [x] Create clean MonoGame `Game` + engine project.
 - [x] Add `EngineContext` with `GraphicsDevice`, `Content`, `GameTime`, `SpriteBatch`.
 - [x] Add `SystemBase` (`Update`/`Draw` hooks).
@@ -33,7 +33,7 @@ This document contains a step-by-step development plan of MonoGame content cover
 - [x] Add `GameObject` with `AddComponent<T>()`, `GetComponent<T>()`.
 - [x] Implement `Transform` (`LocalPosition`/`LocalRotation`/`LocalScale`; `LocalMatrix`; `WorldMatrix`).
 
-## Week 5
+
 - [x] Add `Time` class to support timescale; refactor update methods from `GameTime` to `deltaTime`.
 - [x] Parent/child with `Transform.SetParent`, and `Forward`/`Right`/`Up` helpers.
 - [x] Convert standalone camera to a `Camera` **`Component`**.
@@ -41,7 +41,7 @@ This document contains a step-by-step development plan of MonoGame content cover
 - [x] Create `MeshFilter` with `VertexBuffer`, `IndexBuffer?`, `PrimitiveType`, `PrimitiveCount`, bounds.
 - [x] Add `MeshRenderer` with `BasicEffect` (`VertexColorEnabled = true`, depth on in renderer).
 
-## Week 6
+
 - [x] Add `LayerMask` in preparation for 1st stage of camera culling.
 - [x] Add FBX loading in `MeshFilterFactory`.
 - [x] Add some assets for grass and skybox.
@@ -56,7 +56,7 @@ This document contains a step-by-step development plan of MonoGame content cover
 - [x] Add `RenderLayer` sorting in `RenderSystem`.
 - [x] Add **material abstraction**: wrap `Effect` into a `Material` with parameters; pipeline for future shaders.
 
-## Reading Week
+
 - [x] Define `InputState` (`Move`, `JumpPressed`, `Action1`, `Action2`).
 - [x] Implement `IInputDevice` + `KeyboardInput`, `GamepadInput`.
 - [x] Implement `IInputReceiver` (e.g., `PlayerController` component).
@@ -64,7 +64,7 @@ This document contains a step-by-step development plan of MonoGame content cover
 - [x] Add `IDisposable` to core classes.
 - [x] Add support for MonoGame effect types in `Material` and `MeshRenderer`.
 
-## Week 7
+
 - [x] Add integer structs (e.g. `Integer2`).
 - [x] Add `ScreenResolution` for easy resolution changes.
 - [x] Performance improvements (replace `Math.Pow` with direct multiplication) in `Ease`.
@@ -74,7 +74,7 @@ This document contains a step-by-step development plan of MonoGame content cover
 - [x] Add **serialization**: simple JSON for spawning `GameObject`.
 - [x] Add `UIReticleRenderer` demo to show `UIRenderSystem` in action.
 
-## Week 8
+
 - [x] Improve name formatting on `ScreenResolution` fields.
 - [x] Add `WindowUtility` to centre game to prevent annoying drag on open.
 - [x] Add **event bus**: lightweight pub/sub (`EventBus`) for decoupled messages between systems.
@@ -93,17 +93,17 @@ This document contains a step-by-step development plan of MonoGame content cover
 - [x] Add anchoring to `UIRenderer` (see stats overlay in `Main::InitializeStatsRenderer`).
 - [x] Add support for single or multi `Camera` views in `RenderSystem`.
 
-## Week 9
+
 - [x] Add `OrchestrationSystem` for sequencing game events.
 - [x] Add physics engine (`PhysicsSystem` and CDCR).
 - [x] Add **audio hooks**: `AudioSystem` to support 2D and 3D sound; service access via `EventBus`.
 - [x] Add impulse system for impulse changes to objects over time (e.g. camera shake, audio volume change, light flicker)
 
-## Week 10
+
 - [x] Add object picking and removal 
 - [x] Add `UIMenuSystem` and demo
 
-# Week 11
+
 - [ ] Add collidable camera
 - [ ] Refactor JSON loader to load game objects and read collider data to set on load
 - [ ] Add inventory that listens for object removal

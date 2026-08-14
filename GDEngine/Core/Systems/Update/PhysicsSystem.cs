@@ -52,7 +52,16 @@ namespace GDEngine.Core.Systems
         private int _velocityIterations = 8;
         private int _substepCount = 1;
 
-        private float _fixedTimestep = -1f; // -1 = variable timestep
+        // Fixed timestep, not variable. With this at -1 (variable), the raw render-frame dt
+        // gets fed straight into Bepu's solver every step with no smoothing at all - if a
+        // frame runs unusually long (a hitch, an unthrottled/background window, anything),
+        // a fast-moving or continuously-forced object can travel far enough in that one
+        // oversized step to tunnel deep into geometry, which the solver then can't cleanly
+        // recover from. That's what was corrupting the broad-phase tree and crashing the
+        // whole simulation. A fixed timestep runs the actual Bepu step in small, consistent,
+        // bounded increments via the accumulator below regardless of how irregular real frame
+        // timing gets - this is the standard way physics engines are supposed to be driven.
+        private float _fixedTimestep = 1f / 60f;
         private float _accumulator = 0f;
 
         private bool _disposed = false;
@@ -336,7 +345,7 @@ namespace GDEngine.Core.Systems
             SyncKinematics();
 
             // 2. Step the simulation
-            a
+            _simulation.Timestep(dt, _threadDispatcher);
 
             // 3. Sync PHYSICS → TRANSFORM for dynamics
             SyncDynamics();
@@ -631,13 +640,18 @@ namespace GDEngine.Core.Systems
                     }
                 }
 
-                // For trigger pairs, disable physical response by zeroing material.
+                // Trigger pairs should never get a physical contact constraint at all - they're
+                // meant to be pure overlap detection (that's what the TriggerEvent above is for).
+                // The previous approach tried to "disable" the response by zeroing the spring
+                // (SpringSettings(0f, 1f)) while still returning true (still asking Bepu to
+                // solve a constraint for the pair). A zero-frequency spring is a degenerate case
+                // for Bepu's compliance math and can produce Infinity/NaN internally - which is
+                // exactly what corrupted the broad-phase tree and crashed the whole simulation
+                // whenever a fast-moving body crossed a trigger volume. Returning false here
+                // tells Bepu to skip constraint generation for this pair entirely - the
+                // semantically correct way to say "detect this, but never physically respond".
                 if (isTriggerPair)
-                {
-                    props.FrictionCoefficient = 0f;
-                    props.MaximumRecoveryVelocity = 0f;
-                    props.SpringSettings = new SpringSettings(0f, 1f);
-                }
+                    return false;
 
                 return true;
             }

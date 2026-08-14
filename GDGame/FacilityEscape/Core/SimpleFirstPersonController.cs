@@ -146,10 +146,12 @@ namespace GDGame.FacilityEscape
             if (_rigidBody == null)
                 return;
 
-            // explicit yaw-derived basis, checked by hand: at yaw=0 this gives forward=(0,0,-1)
-            // and right=(1,0,0), matching Vector3.Forward/Vector3.Right exactly
-            Vector3 forward = new Vector3(MathF.Sin(_yaw), 0f, -MathF.Cos(_yaw));
-            Vector3 right = new Vector3(MathF.Cos(_yaw), 0f, MathF.Sin(_yaw));
+            // yaw-derived basis, derived from actually expanding
+            // Quaternion.CreateFromYawPitchRoll(yaw,0,0) applied to Vector3.Forward/Right by
+            // hand (not just checked at yaw=0, which can't catch a sign error - sin(0)=0 either
+            // way). This matches the camera's real rotation at every yaw, not just the start.
+            Vector3 forward = new Vector3(-MathF.Sin(_yaw), 0f, -MathF.Cos(_yaw));
+            Vector3 right = new Vector3(MathF.Cos(_yaw), 0f, -MathF.Sin(_yaw));
 
             Vector3 inputDirection = Vector3.Zero;
             if (currentKeyboard.IsKeyDown(Keys.W)) inputDirection += forward;
