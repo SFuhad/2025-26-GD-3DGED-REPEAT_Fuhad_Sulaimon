@@ -10,9 +10,8 @@ using Microsoft.Xna.Framework.Input;
 
 namespace GDGame.Demos.Controllers
 {
-    /// <summary>
-    /// When I LMC if object is Interactable then remove it!
-    /// </summary>
+    // when the player left clicks and we're looking at something, delete it
+    // basically just a proof-of-concept for the raycasting + click stuff, not final game logic
     public class InteractionComponent : Component
     {
         private Scene _scene;
@@ -38,8 +37,8 @@ namespace GDGame.Demos.Controllers
 
             _physicsSystem = _scene.GetSystem<PhysicsSystem>()
                             ?? throw new InvalidOperationException(
+                                // yeah the error message name is wrong, copy pasted this from another class, should fix later
                                 "UIPickerInfoRenderer requires a PhysicsSystem in the Scene.");
-
         }
         protected override void Update(float deltaTime)
         {
@@ -52,7 +51,7 @@ namespace GDGame.Demos.Controllers
             if (scene == null)
                 return;
 
-            // Re-acquire active camera in case the scene switched cameras.
+            // grab the active camera fresh each frame in case it switched (first/third person etc)
             var camera = scene.ActiveCamera ?? null;
             if (camera == null)
                 return;
@@ -60,10 +59,10 @@ namespace GDGame.Demos.Controllers
             var device = scene.Context.GraphicsDevice;
             var viewport = camera.GetViewport(device);
 
-            // Reticle is at screen center (same as UIReticleRenderer).
+            // reticle is dead center of the screen, same spot the crosshair UI uses
             var center = viewport.GetCenter();
 
-            //do a raycast
+            // shoot a ray out from the center of the screen and see what we hit
             RaycastHit hitInfo;
             if (_physicsSystem.RaycastFromScreen(
                     camera,
@@ -74,17 +73,14 @@ namespace GDGame.Demos.Controllers
                     out hitInfo,
                     HitTriggers))
             {
-                System.Diagnostics.Debug.WriteLine($"{hitInfo.Body.GameObject.Name}");
+                System.Diagnostics.Debug.WriteLine($"looking at: {hitInfo.Body.GameObject.Name}");
 
-                //ok, this thing is interesting!!!
-
-
+                // only fire on the actual click, not every frame the button happens to be held
                 if (_currentMouseState.LeftButton == ButtonState.Pressed
                     && _oldMouseState.LeftButton == ButtonState.Released)
                 {
-                    //play sound
+                    // little click sfx so it feels like something happened
                     EngineContext.Instance.Events.Publish(new PlaySfxEvent("SFX_UI_Click_Designed_Pop_Generic_1", 1, false, null));
-                    //check mouse click
 
                     _scene.Remove(hitInfo.Body.GameObject);
                 }

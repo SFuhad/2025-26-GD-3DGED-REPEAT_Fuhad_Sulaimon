@@ -29,15 +29,16 @@ namespace GDGame.Demos.Controllers
 
             totalElapsedTimeSecs += deltaTime;
 
-            //absolute movement of the object to position(s) defined on curve
-            Transform.TranslateTo(_positionCurve.Evaluate(totalElapsedTimeSecs)); 
+            // just snap straight to whatever position the curve says for this point in time
+            Transform.TranslateTo(_positionCurve.Evaluate(totalElapsedTimeSecs));
 
-            //FIXED - gimbal lock on XY rotation - get delta between two calls to evaluate and use delta as update
+            // spent AGES debugging gimbal lock here - turns out you can't just set rotation directly
+            // from the curve, you have to diff it against last frame and apply the delta instead
             var nextYawPitchRoll = _rotationCurve.Evaluate(totalElapsedTimeSecs);
 
             var deltaYawPitchRoll = nextYawPitchRoll - _oldYawPitchRoll;
-            if(deltaYawPitchRoll.LengthSquared() > 0)
-                Transform.RotateEulerBy(deltaYawPitchRoll, true); //45.1f
+            if (deltaYawPitchRoll.LengthSquared() > 0)
+                Transform.RotateEulerBy(deltaYawPitchRoll, true);
 
             _oldYawPitchRoll = nextYawPitchRoll;
         }

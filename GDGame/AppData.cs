@@ -2,9 +2,8 @@
 
 namespace GDGame
 {
-    /// <summary>
-    /// Centralised, game-specific configuration and asset keys.
-    /// </summary>
+    // just a big bag of constants so I don't hardcode strings everywhere in Main.cs
+    // (prof said magic strings = bad practice lol)
     public static class AppData
     {
         #region Physics
@@ -118,10 +117,9 @@ namespace GDGame
 
 
         #region Level
+        // TODO: probably should just reuse SCENE_NAME_OUTDOORS_LEVEL1 above, they're the same string
         public static readonly string LEVEL_1_NAME = "outdoors - level 1";
-       
 
         #endregion
-
     }
 }

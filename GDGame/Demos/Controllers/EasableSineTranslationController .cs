@@ -5,30 +5,27 @@ using System;
 
 namespace GDGame.Demos.Controllers
 {
-    /// <summary>
-    /// Oscillates the GameObject along a direction using a sine wave,
-    /// but with an optional time-easing curve to shape the speed profile over each cycle.
-    /// Useful for adding personality (e.g., EaseInOutSine, EaseOutCubic, Elastic-like feel) to the motion.
-    /// </summary>
+    // same idea as SineTranslationController but you can plug in an easing function
+    // so the motion doesn't feel so robotic/linear. bit over-engineered for the demo tbh
+    // but our lecturer wanted to see we understood easing curves
     public class EasableSineTranslationController : Component
     {
         #region Fields
-        // Angular speed in radians per second e.g. 2PI = 1 full cycle per second.
+        // radians/sec, 2PI = one full cycle per second
         public float _angularSpeed = MathHelper.TwoPi * 0.5f;
 
-        // Max distance (amplitude) from the original position along _direction.
+        // how far it swings from the start position
         public float _maxDistance = 1f;
 
-        // Movement direction (will be normalized on Awake if non-zero).
+        // which way it moves (gets normalized in Awake)
         public Vector3 _direction = Vector3.UnitY;
 
-        // Optional phase offset (radians) added before wrapping into a cycle.
+        // shove the cycle forward/back if you don't want it starting at 0
         public float _phaseRadians = 0f;
 
-        // Time shaping curve e.g., Ease.EaseInOutSine, Ease.EaseOutCubic, Ease.EaseInOutElastic, etc.
+        // default is EaseInOutSine but you can swap for EaseOutCubic etc, see Ease.cs
         public Func<float, float> _timeCurve = Ease.EaseInOutSine;
 
-        // Cached original position.
         private Vector3 _originalLocalPosition;
         #endregion
 
@@ -39,53 +36,45 @@ namespace GDGame.Demos.Controllers
         #endregion
 
         #region Methods
-        // Maps a running angle (radians) to an eased angle by:
+        // takes the raw angle we've been accumulating and squishes it through the easing curve
         private float ComputeEasedAngle(float rawAngleInRadians)
         {
-            // Normalize angle to cycles, then take fractional part as t is [0,1)
+            // how many full cycles have we done, keep just the leftover fraction (0-1)
             float cycles = rawAngleInRadians / MathHelper.TwoPi;
             float t = cycles - MathF.Floor(cycles);
 
-            // Apply time curve if present
+            // run it through the easing function (if we have one)
             float te = _timeCurve != null ? _timeCurve(t) : t;
 
-            // Convert back to radians
+            // back to radians so Sin() can use it
             float angleEased = te * MathHelper.TwoPi;
             return angleEased;
         }
         #endregion
 
         #region Lifecycle Methods
-        /// <summary>
-        /// Cache the starting position and normalize the direction (if non-zero).
-        /// </summary>
         protected override void Awake()
         {
-            // Ensure Transform exists; rotation has no meaning without it.
             if (Transform == null)
                 throw new ArgumentNullException(nameof(Transform));
 
+            // remember where we started, everything oscillates around this point
             _originalLocalPosition = Transform.LocalPosition;
 
             if (_direction != Vector3.Zero)
                 _direction.Normalize();
         }
 
-        /// <summary>
-        /// Advance time, build an eased phase angle, evaluate sine, and offset along the direction.
-        /// </summary>
         protected override void Update(float deltaTime)
         {
-            // Build the raw running angle using unscaled realtime 
+            // using real time here (not scaled deltaTime) so pausing doesn't mess up the phase
             float angleRaw = (float)Time.RealtimeSinceStartupSecs * _angularSpeed + _phaseRadians;
 
-            // Ease the time within the cycle before applying sine
             float angle = ComputeEasedAngle(angleRaw);
 
-            // Distance between [-1,1]
+            // -1 to 1
             float distance = MathF.Sin(angle);
 
-            // Apply amplitude and direction about the original position
             Transform?.TranslateTo(_originalLocalPosition + _direction * distance * _maxDistance);
         }
         #endregion

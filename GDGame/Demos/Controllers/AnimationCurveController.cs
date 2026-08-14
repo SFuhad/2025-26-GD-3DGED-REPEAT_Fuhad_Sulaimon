@@ -5,16 +5,14 @@ using System;
 
 namespace GDGame.Demos.Controllers
 {
-    /// <summary>
-    /// Demos a crude controller to move a gameobject based on a 1D animation curve
-    /// </summary>
+    // moves a gameobject along a 1D animation curve, kind of a hacky demo but it works
     public class AnimationCurveController : Component
     {
         #region Fields
         private Vector3 _direction = Vector3.UnitY;
         private AnimationCurve _curve;
 
-        //cached vars
+        // cached so we don't recompute every frame
         private float _totalElapsedTimeSecs;
         private Vector3 _originalLocalPosition;
 
@@ -33,7 +31,8 @@ namespace GDGame.Demos.Controllers
                 throw new ArgumentNullException(nameof(Curve));
 
             _totalElapsedTimeSecs += Time.UnscaledDeltaTimeSecs;
-            
+
+           // 2 = smoothing passes, just eyeballed a value that looked ok
            var delta = _curve.Evaluate(_totalElapsedTimeSecs, 2);
            Transform?.TranslateTo(_originalLocalPosition + delta * _direction);
         }
@@ -43,10 +42,10 @@ namespace GDGame.Demos.Controllers
             if (Transform == null)
                 throw new ArgumentNullException(nameof(Transform));
 
-            //store so we always apply curve output to original position
+            // save starting position so the curve offsets from here, not from world origin
             _originalLocalPosition = Transform.LocalPosition;
 
-            //remove any scale on direction so its pure curve driven movement
+            // normalize direction otherwise the curve output gets scaled weirdly
             _direction.Normalize();
         }
     }

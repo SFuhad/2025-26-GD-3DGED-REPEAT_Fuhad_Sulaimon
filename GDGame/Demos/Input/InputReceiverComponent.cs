@@ -7,33 +7,24 @@ using System.Linq;
 
 namespace GDGame.Demos
 {
-    /// <summary>
-    /// Demo receiver that prints axis movements and button presses/releases
-    /// from any input device routed through the InputSystem.
-    /// Attach to any GameObject in the scene.
-    /// </summary>
-    /// <see cref="InputSystem"/>
-    /// <see cref="IInputReceiver"/>
+    // just a scratch component to test that InputSystem actually routes events to receivers -
+    // spams the debug output whenever something happens on any device. not meant to ship,
+    // more of a "does my input pipeline even work" sanity check
     public class InputReceiverComponent : Component, IInputReceiver
     {
         #region Static Fields
-        //7 - ignore noise from analogue sticks/mouse by adding a tiny deadzone
-        static readonly float INPUT_DEADZONE = 0.001f; 
+        // small deadzone so idle analog sticks/mouse jitter doesn't spam the console
+        static readonly float INPUT_DEADZONE = 0.001f;
         #endregion
 
         #region Fields
-        private InputSystem _input; //  //3 - cache the InputSystem reference for unsubscribe on destroy
-        #endregion
-
-        #region Constructors
-        // (none)
+        private InputSystem _input; // keep a ref around so we can unsubscribe later
         #endregion
 
         #region Methods
-        //1 - ensure you add IInputReceiver to the class to register for input callbacks
-        //    (this class: DemoInputReceiverComponent : Component, IInputReceiver)
-
-        //2 - in Start() locate the scene's InputSystem and subscribe
+        // notes to self on how this whole thing works, for when I forget in 2 weeks:
+        // step 1 - implement IInputReceiver on the class (done, see class def above)
+        // step 2 - in Start(), find the InputSystem for this scene and register with it
         protected override void Start()
         {
             var scene = GameObject?.Scene;
@@ -43,8 +34,8 @@ namespace GDGame.Demos
                 return;
             }
 
-            //4 - find the InputSystem in the scene's systems list and add this as a receiver
-            //    (InputSystem can be created earlier with InputSystem.CreateDefault() and scene.Add(sys))
+            // step 3 - InputSystem should already be added to the scene (via InputSystem.CreateDefault())
+            // before this component runs, otherwise we bail out below
             _input = scene.Systems.FirstOrDefault(s => s is InputSystem) as InputSystem;
             if (_input == null)
             {
@@ -56,7 +47,7 @@ namespace GDGame.Demos
             Debug.WriteLine("[DemoInputReceiverComponent] Subscribed to InputSystem.");
         }
 
-        //5 - always unsubscribe in OnDestroy() to avoid dangling references
+        // step 4 - and obviously unsubscribe when we're destroyed, otherwise dangling refs
         protected override void OnDestroy()
         {
             if (_input != null)
@@ -66,8 +57,7 @@ namespace GDGame.Demos
             }
         }
 
-        //6 - OnAxis(action, value) is called every frame when an axis has input
-        //    Examples: MoveX/MoveY from WASD or LeftStick; LookX/LookY from arrows or mouse delta
+        // called every frame there's axis movement - stuff like MoveX/MoveY (WASD/stick) or LookX/LookY (mouse/arrows)
         public void OnAxis(InputAction action, float value)
         {
             if (value > -INPUT_DEADZONE && value < INPUT_DEADZONE)
@@ -78,37 +68,33 @@ namespace GDGame.Demos
             switch (action)
             {
                 case InputAction.ScrollWheelDelta:
-                    // zoom by delta per frame
+                    // could use this for camera zoom later
                     Debug.WriteLine($"[Input AXIS] {action} = {value:0.###}");
                     break;
 
                 case InputAction.ScrollWheelValue:
-                    // or map absolute value to a parameter (e.g., UI scroll position)
+                    // absolute scroll value, not delta - didn't end up needing this but leaving it in
                     Debug.WriteLine($"[Input AXIS] {action} = {value:0.###}");
                     break;
 
-                    // existing MoveX/MoveY/LookX/LookY...
+                    // MoveX/MoveY/LookX/LookY etc just fall through to the generic log above
             }
         }
 
-        //8 - OnButtonPressed(action, isFirstPress) is called on rising edge; repeats pass isFirstPress=false (if enabled)
+        // fires once when a button first goes down. isFirstPress is false on OS key-repeat events
         public void OnButtonPressed(InputAction action, bool isFirstPress)
         {
-            //9 - if you only want first-press behavior (no repeats), early-out on isFirstPress=false
+            // if key-repeat spam becomes annoying just uncomment this:
             //if (!isFirstPress) return;
 
             Debug.WriteLine($"[Input DOWN] {action} (first:{isFirstPress})");
         }
 
-        //10 - OnButtonReleased(action) is called once on the falling edge
+        // fires once on release
         public void OnButtonReleased(InputAction action)
         {
             Debug.WriteLine($"[Input UP]   {action}");
         }
-        #endregion
-
-        #region Lifecycle Methods
-        // None
         #endregion
 
         #region Housekeeping Methods

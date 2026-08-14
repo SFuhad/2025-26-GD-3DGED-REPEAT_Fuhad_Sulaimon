@@ -4,10 +4,8 @@ using System;
 
 namespace GDGame.Demos
 {
-    /// <summary>
-    /// Carries an inventory change (add/remove) for a specific player object.
-    /// </summary>
-    /// <see cref="GameObject"/>
+    // fired whenever the player picks up or drops/uses an item
+    // publish one of these on the EventBus and whoever's listening (UI, save system etc) reacts to it
     public sealed class InventoryEvent
     {
         #region Properties

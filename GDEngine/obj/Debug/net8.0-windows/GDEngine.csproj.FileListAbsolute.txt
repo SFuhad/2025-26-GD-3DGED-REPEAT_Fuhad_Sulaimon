@@ -1,0 +1,13 @@
+C:\Users\fuhad\source\repos\Facility_Escape\GDEngine\bin\Debug\net8.0-windows\GDEngine.deps.json
+C:\Users\fuhad\source\repos\Facility_Escape\GDEngine\bin\Debug\net8.0-windows\GDEngine.dll
+C:\Users\fuhad\source\repos\Facility_Escape\GDEngine\bin\Debug\net8.0-windows\GDEngine.pdb
+C:\Users\fuhad\source\repos\Facility_Escape\GDEngine\obj\Debug\net8.0-windows\GDEngine.csproj.AssemblyReference.cache
+C:\Users\fuhad\source\repos\Facility_Escape\GDEngine\obj\Debug\net8.0-windows\GDEngine.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\fuhad\source\repos\Facility_Escape\GDEngine\obj\Debug\net8.0-windows\GDEngine.AssemblyInfoInputs.cache
+C:\Users\fuhad\source\repos\Facility_Escape\GDEngine\obj\Debug\net8.0-windows\GDEngine.AssemblyInfo.cs
+C:\Users\fuhad\source\repos\Facility_Escape\GDEngine\obj\Debug\net8.0-windows\GDEngine.csproj.CoreCompileInputs.cache
+C:\Users\fuhad\source\repos\Facility_Escape\GDEngine\obj\Debug\net8.0-windows\GDEngine.sourcelink.json
+C:\Users\fuhad\source\repos\Facility_Escape\GDEngine\obj\Debug\net8.0-windows\GDEngine.dll
+C:\Users\fuhad\source\repos\Facility_Escape\GDEngine\obj\Debug\net8.0-windows\refint\GDEngine.dll
+C:\Users\fuhad\source\repos\Facility_Escape\GDEngine\obj\Debug\net8.0-windows\GDEngine.pdb
+C:\Users\fuhad\source\repos\Facility_Escape\GDEngine\obj\Debug\net8.0-windows\ref\GDEngine.dll

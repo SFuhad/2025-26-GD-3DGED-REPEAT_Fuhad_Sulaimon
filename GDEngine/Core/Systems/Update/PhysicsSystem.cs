@@ -336,7 +336,7 @@ namespace GDEngine.Core.Systems
             SyncKinematics();
 
             // 2. Step the simulation
-            _simulation.Timestep(dt, _threadDispatcher);
+            a
 
             // 3. Sync PHYSICS → TRANSFORM for dynamics
             SyncDynamics();

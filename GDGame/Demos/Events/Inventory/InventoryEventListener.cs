@@ -6,10 +6,8 @@ using System.Collections.Generic;
 
 namespace GDGame.Demos
 {
-    /// <summary>
-    /// Subscribes to <see cref="InventoryEvent"/> and mutates a simple local inventory model.
-    /// </summary>
-    /// <see cref="InventoryEvent"/>
+    // sits on the player object and listens for InventoryEvents, keeps a running count per item id
+    // this is just a bare-bones version, no saving/loading, just an in-memory dictionary for now
     public sealed class InventoryEventListener : Component
     {
         #region Fields
@@ -18,22 +16,19 @@ namespace GDGame.Demos
         #endregion
 
         #region Lifecycle Methods
-        /// <summary>
-        /// Subscribe to inventory events for this specific player object.
-        /// </summary>
         protected override void Awake()
         {
             if (EngineContext.Instance == null)
                 throw new NullReferenceException(nameof(EngineContext));
 
+            // subscribe on the bus - every InventoryEvent in the whole scene comes through here,
+            // that's why we filter by e.Player below
             _sub = EngineContext.Instance.Events.Subscribe<InventoryEvent>(OnInventoryEvent);
         }
 
-        /// <summary>
-        /// Unsubscribe on teardown.
-        /// </summary>
         protected override void OnDestroy()
         {
+            // gotta unsubscribe or we leak the handler, learned this one the hard way
             _sub?.Dispose();
             _sub = null;
         }
@@ -42,10 +37,10 @@ namespace GDGame.Demos
         #region Methods
         private void OnInventoryEvent(InventoryEvent e)
         {
+            // events for other players don't concern us
             if (e.Player != GameObject)
                 return;
 
-            // Add/remove by quantity
             if (e.IsAdd)
             {
                 if (!_items.ContainsKey(e.ItemId))
@@ -57,10 +52,10 @@ namespace GDGame.Demos
             else
             {
                 if (!_items.TryGetValue(e.ItemId, out var count))
-                    return;
+                    return; // don't have it, nothing to remove
 
                 var newCount = Math.Max(0, count - e.Quantity);
-                if (newCount == 0) _items.Remove(e.ItemId);
+                if (newCount == 0) _items.Remove(e.ItemId); // clean up so the dict doesn't fill with zeros
                 else _items[e.ItemId] = newCount;
 
                 System.Diagnostics.Debug.WriteLine($"[Inventory] -{e.Quantity} {e.ItemId} (total={newCount})");

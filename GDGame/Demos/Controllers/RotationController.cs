@@ -5,65 +5,45 @@ using System;
 
 namespace GDGame.Demos.Controllers
 {
-    /// <summary>
-    /// Rotates the owning <see cref="GameObject"/> around a configurable local-space axis
-    /// at a configurable angular speed. Rotation is applied incrementally each frame using
-    /// an axis–angle quaternion and composed with the current <see cref="Transform.LocalRotation"/>.
-    /// </summary>
-    /// <see cref="Transform"/>
+    // spins the gameobject around an axis, like a turntable by default (spins around Y)
+    // pretty much the simplest controller in this folder, everything else builds on this idea
     public sealed class RotationController : Component
     {
         #region Static Fields
-        // Smallest speed we consider "meaningful" (radians/sec). Helps avoid work and floating-point churn.
+        // anything smaller than this and it's basically not moving, don't bother doing the math
         private static readonly float ROTATION_THRESHOLD = 1E-8f;
         #endregion
 
         #region Fields
-        // Local-space rotation axis. Will be normalized in Awake() to ensure stable angular motion.
-        // Defaults to +Y (Vector3.Up) which yields a spin like a turntable.
+        // which way it spins, defaults to straight up (Vector3.Up)
         public Vector3 _rotationAxisNormalized = Vector3.Up;
 
-        // Angular speed in radians per second. Positive values rotate according to the right-hand rule
-        // about _rotationAxisNormalized; negative values rotate in the opposite direction.
-        public float _rotationSpeedInRadiansPerSecond = MathF.PI / 2f; // 90°/s by default
+        // how fast, in radians/sec. negative = spins the other way
+        public float _rotationSpeedInRadiansPerSecond = MathF.PI / 2f; // roughly 90 degrees a second
         #endregion
 
         #region Lifecycle Methods
-        /// <summary>
-        /// Applies an incremental rotation for this frame.
-        /// </summary>
-        /// <param name="deltaTime">Elapsed time since last frame (seconds).</param>
         protected override void Update(float deltaTime)
         {
-            // Skip tiny angular speeds to avoid unnecessary quaternion work / denorms.
+            // don't bother if the speed is basically zero
             if (MathF.Abs(_rotationSpeedInRadiansPerSecond) <= ROTATION_THRESHOLD)
                 return;
 
-            // θ = ω * Δt (radians). This is the per-frame angle to rotate by.
+            // angle for this frame = speed * time (basic physics formula from class)
             float angle = _rotationSpeedInRadiansPerSecond * deltaTime;
 
-            // Build a delta-rotation from axis–angle. Assumes axis is already normalized in Awake().
             Quaternion delta = Quaternion.CreateFromAxisAngle(_rotationAxisNormalized, angle);
 
-            //Apply rotation via delta quaternion
             Transform?.RotateBy(delta);
         }
 
-        /// <summary>
-        /// Validates references and normalizes configuration for stable runtime behavior.
-        /// </summary>
         protected override void Awake()
         {
-            // Ensure Transform exists; rotation has no meaning without it.
             if (Transform == null)
                 throw new ArgumentNullException(nameof(Transform));
 
-            // Guarantee unit-length axis so angular speed maps 1:1 to radians/sec about that axis.
-            // If the user provided the zero vector, Normalize() will leave it at (0,0,0);
-            // in that case, no visible rotation will occur, which is acceptable and safe.
+            // has to be normalized or the rotation speed won't match what you set - learned this the hard way
             _rotationAxisNormalized.Normalize();
-
-            // NO-OP: base.Awake() if the base class needs it; otherwise intentionally omitted.
         }
         #endregion
     }

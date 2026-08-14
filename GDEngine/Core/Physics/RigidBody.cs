@@ -172,6 +172,12 @@ namespace GDEngine.Core.Components
                 if (_bodyType == BodyType.Dynamic && _bodyHandle.HasValue && _physicsSystem != null)
                 {
                     var bodyRef = _physicsSystem.Simulation.Bodies.GetBodyReference(_bodyHandle.Value);
+                    // BepuPhysics puts resting bodies to sleep for performance. Writing a new
+                    // velocity onto a sleeping body does NOT wake it back up on its own - the
+                    // solver just ignores it until something else wakes the body - so a capsule
+                    // that comes to rest for a second would stop responding to input forever
+                    // without this. Force it awake before applying the write.
+                    bodyRef.Awake = true;
                     bodyRef.Velocity.Linear = _linearVelocity.ToBepu();
                 }
             }
@@ -190,6 +196,7 @@ namespace GDEngine.Core.Components
                 if (_bodyType == BodyType.Dynamic && _bodyHandle.HasValue && _physicsSystem != null)
                 {
                     var bodyRef = _physicsSystem.Simulation.Bodies.GetBodyReference(_bodyHandle.Value);
+                    bodyRef.Awake = true;   // same sleeping-body issue as LinearVelocity above
                     bodyRef.Velocity.Angular = _angularVelocity.ToBepu();
                 }
             }
@@ -227,6 +234,7 @@ namespace GDEngine.Core.Components
             Vector3 acceleration = force / _mass;
             Vector3 deltaV = acceleration * dt;
 
+            bodyRef.Awake = true;   // same sleeping-body issue as LinearVelocity - see comment there
             bodyRef.Velocity.Linear += deltaV.ToBepu();
             _linearVelocity = bodyRef.Velocity.Linear.ToXNA();
         }
@@ -243,6 +251,7 @@ namespace GDEngine.Core.Components
             var bodyRef = _physicsSystem.Simulation.Bodies.GetBodyReference(_bodyHandle.Value);
 
             Vector3 deltaV = impulse / _mass;
+            bodyRef.Awake = true;   // same sleeping-body issue as LinearVelocity - see comment there
             bodyRef.Velocity.Linear += deltaV.ToBepu();
             _linearVelocity = bodyRef.Velocity.Linear.ToXNA();
         }
@@ -259,6 +268,7 @@ namespace GDEngine.Core.Components
             // Proper torque application would use inertia tensor.
             // For now, treat torque as a direct change in angular velocity.
             var bodyRef = _physicsSystem.Simulation.Bodies.GetBodyReference(_bodyHandle.Value);
+            bodyRef.Awake = true;   // same sleeping-body issue as LinearVelocity - see comment there
             bodyRef.Velocity.Angular += torque.ToBepu() * 0.1f;
             _angularVelocity = bodyRef.Velocity.Angular.ToXNA();
         }

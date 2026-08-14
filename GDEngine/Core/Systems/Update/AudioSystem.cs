@@ -298,6 +298,14 @@ namespace GDEngine.Core.Systems
         {
             get { return _mixer; }
         }
+
+        /// <summary>
+        /// Gate for multi-scene setups where every Scene owns its own AudioSystem instance
+        /// but all of them share one engine-wide EventBus. Without this, publishing a single
+        /// PlaySfxEvent would be handled by every scene's AudioSystem at once (N-times layered
+        /// playback). Defaults to always-true so single-scene projects behave exactly as before.
+        /// </summary>
+        public Func<bool> IsActiveScene { get; set; } = () => true;
         #endregion
 
         #region Constructors
@@ -486,25 +494,32 @@ namespace GDEngine.Core.Systems
             if (bus == null)
                 return;
 
-            // Subscribe to all relevant events
+            // Subscribe to all relevant events. Gated by IsActiveScene so that in a multi-scene
+            // game, only the AudioSystem belonging to the currently active scene reacts - otherwise
+            // every dormant scene's AudioSystem would also play the same clip at once.
             _subPlaySfx = bus.On<PlaySfxEvent>()
                 .WithPriorityPreset(EventPriority.Gameplay)
+                .When(_ => IsActiveScene())
                 .Do(HandlePlaySfx);
 
             _subStopAllSfx = bus.On<StopAllSfxEvent>()
                 .WithPriorityPreset(EventPriority.Gameplay)
+                .When(_ => IsActiveScene())
                 .Do(_ => StopAllSfx());
 
             _subPlayMusic = bus.On<PlayMusicEvent>()
                 .WithPriorityPreset(EventPriority.Systems)
+                .When(_ => IsActiveScene())
                 .Do(HandlePlayMusic);
 
             _subStopMusic = bus.On<StopMusicEvent>()
                 .WithPriorityPreset(EventPriority.Systems)
+                .When(_ => IsActiveScene())
                 .Do(HandleStopMusic);
 
             _subFadeChannel = bus.On<FadeChannelEvent>()
                 .WithPriorityPreset(EventPriority.Systems)
+                .When(_ => IsActiveScene())
                 .Do(HandleFadeChannel);
         }
 

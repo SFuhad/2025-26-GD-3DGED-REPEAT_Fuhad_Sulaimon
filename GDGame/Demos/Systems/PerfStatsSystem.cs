@@ -10,6 +10,8 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace GDGame.Demos
 {
+    // draws an FPS counter (with drop shadow so it's readable over anything) in the corner of the screen
+    // plus whatever extra debug lines get passed in via linesProvider
     public sealed class PerfStatsSystem : SystemBase
     {
         #region Fields
@@ -20,7 +22,7 @@ namespace GDGame.Demos
         private readonly SpriteFont? _font;
         private SpriteBatch? _spriteBatch;
 
-        // Smoothing window (we'll describe the class in the aside)
+        // keeps the last 60 frame times so the fps number doesn't jitter around like crazy every frame
         private readonly CircularBuffer<float> _recentDt = new CircularBuffer<float>(60);
 
         #region Properties
@@ -54,11 +56,11 @@ namespace GDGame.Demos
             if (_font == null)
                 throw new NullReferenceException(nameof(_font));
 
-            // Use unscaled delta so timescale changes don't affect FPS readout.
-            float dt = MathF.Max(Time.UnscaledDeltaTimeSecs, 1e-6f); //16.67ms
+            // unscaled so slow-mo / pause doesn't make the fps counter lie to us
+            float dt = MathF.Max(Time.UnscaledDeltaTimeSecs, 1e-6f); // clamp so we never divide by 0 below
             _recentDt.Push(dt);
 
-            // Simple average over the small window
+            // average it out over the buffer so the number isn't jumping around every single frame
             var arr = _recentDt.ToArray();
             float sum = 0f;
             for (int i = 0; i < arr.Length; i++) sum += arr[i];
@@ -84,9 +86,7 @@ namespace GDGame.Demos
                 }
             }
             _spriteBatch.End();
-
-
-        } 
+        }
         #endregion
     }
 }

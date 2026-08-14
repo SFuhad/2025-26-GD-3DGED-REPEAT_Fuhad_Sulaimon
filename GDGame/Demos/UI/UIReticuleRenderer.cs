@@ -7,6 +7,8 @@ using System;
 
 namespace GDEngine.Core.Rendering.UI
 {
+    // draws the crosshair that follows the mouse. slowly spins it too, honestly just
+    // because it looked cool when I was testing rotation, not because it needs to
     public class UIReticuleRenderer : UIRenderer
     {
         private Texture2D? _texture;
@@ -21,35 +23,34 @@ namespace GDEngine.Core.Rendering.UI
         protected override void Awake()
         {
             base.Awake();
-            // Get ref to draw textures and strings
+            // need this to actually draw the texture/text
             _spriteBatch = GameObject?.Scene?.Context.SpriteBatch;
-
-            
-
         }
+
         public override void Draw(GraphicsDevice device, Camera? camera)
         {
             if (_spriteBatch == null)
                 throw new NullReferenceException(nameof(_spriteBatch));
 
-            if(_texture == null)
+            if (_texture == null)
                 throw new NullReferenceException(nameof(_texture));
 
             _spriteBatch.Begin(
                 SpriteSortMode.FrontToBack,
-                BlendState.AlphaBlend,         
+                BlendState.AlphaBlend,
                 SamplerState.PointClamp,
                 DepthStencilState.None,
                 RasterizerState.CullNone);
 
-            _rotation +=1;
+            _rotation += 1; // not framerate-independent but it's subtle enough nobody notices
 
             var mousePosition = Mouse.GetState().Position.ToVector2();
+            // "Dist[3]" is just a placeholder label, was going to hook up real distance-to-target text here
             _spriteBatch.DrawString(_font, "Dist[3]", mousePosition + _offset, Color.Black);
             _spriteBatch.Draw(_texture, mousePosition, null,
                 Color.White, MathHelper.ToRadians(_rotation),
-                new Vector2(_texture.Width/2, _texture.Height/2), 
-                6, SpriteEffects.None, 0);
+                new Vector2(_texture.Width / 2, _texture.Height / 2),
+                6, SpriteEffects.None, 0); // 6 = scale, texture is tiny so we blow it up
             _spriteBatch.End();
         }
     }

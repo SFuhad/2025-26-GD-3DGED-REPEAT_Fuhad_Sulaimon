@@ -50,6 +50,10 @@ namespace GDGame
         private PBRMaterial _matPBR;
         #endregion
 
+        // flip this back to true to get the old single-scene tutorial/demo level instead of
+        // the actual Facility Escape hub+zones - kept around as a reference, not deleted
+        private const bool RUN_LEGACY_DEMO_SCENE = false;
+
         #region Demo Fields (remove in the game)
         private AnimationCurve3D _animationPositionCurve, _animationRotationCurve;
         private AnimationCurve _animationCurve;
@@ -89,7 +93,21 @@ namespace GDGame
 
             // Game component that exists outside scene to manage and swap scenes
             InitializeSceneManager();
+            #endregion
 
+            if (RUN_LEGACY_DEMO_SCENE)
+                InitializeLegacyDemoScene();
+            else
+                InitializeFacilityEscape();
+
+            base.Initialize();
+        }
+
+        // this used to be the whole Initialize() body - now it's just the old single-scene
+        // tutorial/demo path, only reachable via the RUN_LEGACY_DEMO_SCENE toggle above
+        private void InitializeLegacyDemoScene()
+        {
+            #region Core
             // Create the scene and register it
             InitializeScene();
 
@@ -150,7 +168,7 @@ namespace GDGame
 
             // Main menu
             InitializeMenuManager();
-    
+
             // Set win/lose conditions
             SetWinConditions();
 
@@ -159,8 +177,36 @@ namespace GDGame
 
             // Set the active scene
             _sceneManager.SetActiveScene(AppData.LEVEL_1_NAME);
+        }
 
-            base.Initialize();
+        // the actual game: builds the hub + all 5 zones up front and drops the player into
+        // the hub. Every scene owns its own full set of systems (see FacilitySceneFactory),
+        // so this is just 6 Build() calls, not 6x copy-pasted InitializeSystems() blocks.
+        private void InitializeFacilityEscape()
+        {
+            var device = _graphics.GraphicsDevice;
+            var font = _fontDictionary.Get("menufont");
+
+            // hide the OS cursor - SimpleFirstPersonController recenters the mouse every frame
+            // for look controls, which would otherwise be very visibly jumping around
+            IsMouseVisible = false;
+
+            GDGame.FacilityEscape.HubSceneBuilder.Build(
+                _sceneManager, device, _soundDictionary, _textureDictionary, font, _matBasicLit);
+            GDGame.FacilityEscape.R1SceneBuilder.Build(
+                _sceneManager, device, _soundDictionary, _textureDictionary, font, _matBasicLit);
+            GDGame.FacilityEscape.R2SceneBuilder.Build(
+                _sceneManager, device, _soundDictionary, _textureDictionary, font, _matBasicLit);
+            GDGame.FacilityEscape.R3SceneBuilder.Build(
+                _sceneManager, device, _soundDictionary, _textureDictionary, font, _matBasicLit);
+            GDGame.FacilityEscape.R5SceneBuilder.Build(
+                _sceneManager, device, _soundDictionary, _textureDictionary, font, _matBasicLit);
+            GDGame.FacilityEscape.R6SceneBuilder.Build(
+                _sceneManager, device, _soundDictionary, _textureDictionary, font, _matBasicLit);
+
+            // no pause menu wired up this pass (see plan) - _sceneManager.Paused stays false
+            // by default so the game just runs
+            _sceneManager.SetActiveScene(GDGame.FacilityEscape.FacilityAppData.HUB_SCENE_NAME);
         }
 
         private void SetPauseShowMenu()
@@ -376,15 +422,11 @@ namespace GDGame
             EngineContext.Initialize(GraphicsDevice, Content);
         }
 
-        /// <summary>
-        /// New asset loading from JSON using AssetEntry and ContentDictionary::LoadFromManifest
-        /// </summary>
-        /// <param name="relativeFilePathAndName"></param>
-        /// <see cref="AssetEntry"/>
-        /// <see cref="ContentDictionary{T}"/>
+        // loads everything listed in the asset manifest json instead of Content.Load-ing
+        // each texture/model one by one like the tutorials do - way less copy-pasting
         private void LoadAssetsFromJSON(string relativeFilePathAndName)
         {
-            // Make dictionaries to store assets
+            // one dictionary per asset type
             _textureDictionary = new ContentDictionary<Texture2D>();
             _modelDictionary = new ContentDictionary<Model>();
             _fontDictionary = new ContentDictionary<SpriteFont>();
@@ -786,9 +828,8 @@ namespace GDGame
         }
 
 
-        /// <summary>
-        /// Add parent root at origin to rotate the sky
-        /// </summary>
+        // empty gameobject at the origin that the 5 skybox quads get parented to,
+        // so spinning this one object spins the whole sky
         private void InitializeSkyParent()
         {
             var _skyParent = new GameObject("SkyParent");
@@ -938,9 +979,8 @@ namespace GDGame
             IsMouseVisible = false;
         }
 
-        /// <summary>
-        /// Adds a single-part FBX model into the scene.
-        /// </summary>
+        // helper so I'm not copy-pasting the same 10 lines every time I want to drop
+        // a textured model into the scene
         private GameObject InitializeModel(Vector3 position,
             Vector3 eulerRotationDegrees, Vector3 scale,
             string textureName, string modelName, string objectName)
@@ -974,9 +1014,12 @@ namespace GDGame
             Time.Update(gameTime);
             #endregion
 
-            #region Demo
-            DemoStuff();
-            #endregion
+            // DemoStuff() has number-key bindings (1-7) that fire sound effects, switch music,
+            // publish camera events etc - only relevant to the legacy tutorial scene. It used to
+            // run unconditionally here, which meant any of those keys firing during real gameplay
+            // played "random" sounds nobody asked for.
+            if (RUN_LEGACY_DEMO_SCENE)
+                DemoStuff();
 
             base.Update(gameTime);
         }
@@ -988,11 +1031,8 @@ namespace GDGame
             base.Draw(gameTime);
         }
 
-        /// <summary>
-        /// Override Dispose to clean up engine resources.
-        /// MonoGame's Game class already implements IDisposable, so we override its Dispose method.
-        /// </summary>
-        /// <param name="disposing">True if called from Dispose(), false if called from finalizer.</param>
+        // cleans up all the engine stuff we allocated (materials, dictionaries, etc) - MonoGame's
+        // Game base class already implements IDisposable so we're just overriding it here
         protected override void Dispose(bool disposing)
         {
             if (_disposed)
@@ -1097,20 +1137,20 @@ namespace GDGame
         {
             var gameStateSystem = _sceneManager.ActiveScene.GetSystem<GameStateSystem>();
 
-            // Value providers (Strategy pattern via delegates)
+            // wrapping these in delegates so GameStateSystem can just call them whenever it wants
+            // to re-check conditions, instead of us pushing values to it every frame
             Func<float> healthProvider = () =>
             {
-                //get the player and access the player's health/speed/other variable
                 return _currentHealth;
             };
 
-            // Delegate for time
             Func<float> timeProvider = () =>
             {
                 return (float)Time.RealtimeSinceStartupSecs;
             };
 
-            // Lose condition: health < 10 AND time > 60
+            // not actually using health/time providers for the win/lose check yet, just have
+            // them ready for when the real conditions get built out
             IGameCondition loseCondition =
                 GameConditions.FromPredicate("all enemies visited", checkEnemiesVisited);
 
@@ -1195,7 +1235,8 @@ namespace GDGame
             DemoAudioSystem();
             DemoOrchestrationSystem();
             DemoImpulsePublish();
-            //a demo relating to GameStateSystem
+            // just ticking health down over time so there's something to see in the debug UI,
+            // not actually tied to damage yet (health goes down every frame regardless of fps, I know)
             _currentHealth--;
 
             // Store old state (allows us to do was pressed type checks)
@@ -1292,7 +1333,7 @@ namespace GDGame
         {
             var events = EngineContext.Instance.Events;
 
-            //TODO - Exercise
+            // D3-D7 just trigger different bits of the audio system so I can hear the differences
             bool isD3Pressed = _newKBState.IsKeyDown(Keys.D3) && !_oldKBState.IsKeyDown(Keys.D3);
             if (isD3Pressed)
             {
@@ -1470,24 +1511,19 @@ namespace GDGame
             _sceneManager.ActiveScene.Add(go);
         }
 
-        /// <summary>
-        /// Subscribes a simple debug listener for physics collision events.
-        /// </summary>
+        // just wires up a debug handler so we can see collisions happening in the console
         private void InitializeCollisionEventListener()
         {
             var events = EngineContext.Instance.Events;
 
-            // Lowest friction: just subscribe with default priority & no filter
+            // default priority, no filter - simplest possible subscribe
             _collisionSubscription = events.Subscribe<CollisionEvent>(OnCollisionEvent);
         }
 
-        /// <summary>
-        /// Very simple collision debug handler.
-        /// Adjust field names to match your CollisionEvent struct.
-        /// </summary>
+        // logs collisions between objects - currently commented out below since it got spammy
         private void OnCollisionEvent(CollisionEvent evt)
         {
-            // Early-out if this collision does not involve any layer we care about.
+            // skip anything that's not on a layer we actually care about
             if (!evt.Matches(_collisionDebugMask))
                 return;
 
