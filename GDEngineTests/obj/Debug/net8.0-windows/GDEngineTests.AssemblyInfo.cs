@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GDEngineTests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b8a5c1efcf43c29b70fbac764cc2ec752ce6c753")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b5a9bb9af8358523c9d0a1afd949be4eedaaffa8")]
 [assembly: System.Reflection.AssemblyProductAttribute("GDEngineTests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GDEngineTests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
